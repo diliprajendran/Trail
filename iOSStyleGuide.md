@@ -24,6 +24,7 @@ Table of Contents
 * [Class Headers](#class-headers)
 * [Implementation](#implementation)
 * [Subclassing, Categories and Extensions](#subclassing-categories-and-extensions)
+* [Dot Notation Syntax](#dot-notation-syntax)
 * [Project Organization](#project-organization)
 
 <a name="comments"></a>
@@ -402,6 +403,22 @@ When possible, it is best to use categories rather than subclassing. This will e
 Extensions are another way to avoid subclassing. Use these when you simply need to add additional properties to a custom class. Private properties should be declared in an anonymous extension.
 
 When subclassing must be used, name the subclass in a way that suggests the super class. For example, `XYZMenuView` might be subclassed as `XYZCarMenuView`.
+
+## Dot Notation Syntax
+
+Dot notation should **always** be used for accessing and mutating properties. Bracket notation is preferred in all other instances.
+
+**For example:**
+```objc
+view.backgroundColor = [UIColor orangeColor];
+[UIApplication sharedApplication].delegate;
+```
+
+**Not:**
+```objc
+[view setBackgroundColor:[UIColor orangeColor]];
+UIApplication.sharedApplication.delegate;
+```
 
 <a name="project-organization"></a>
 Project Organization
