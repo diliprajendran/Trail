@@ -1,9 +1,16 @@
-Complete iOS Developer Style Guide
-==================================
+iOS Developer Style Guide
+=========================
 
-There are many Objective-C / CocoaTouch / iOS style guides out there but none of them touch on everything. This is an attempt to be a complete style guide that will cover all aspects of iOS/Objective-C development.
+	Source : https://github.com/troyharris/Complete-iOS-StyleGuide
+	Source : https://github.com/NYTimes/objective-c-style-guide
+	
+	Here are some of the documents from Apple that informed the style guide. If something isn’t mentioned here, it’s probably covered in great detail in one of these:
 
-This guide is ultimately intended to be a community project, owned by everyone. Push requests are asked for to fill in the holes, fix problems, or add clarity and detail. If you are submitting a change or addition that is non-standard or obscure, please include some reference as to the reasoning. Apple documentation and community consensus will trump personal preference.
+* [The Objective-C Programming Language](http://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/ObjectiveC/Introduction/introObjectiveC.html)
+* [Cocoa Fundamentals Guide](https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/CocoaFundamentals/Introduction/Introduction.html)
+* [Coding Guidelines for Cocoa](https://developer.apple.com/library/mac/#documentation/Cocoa/Conceptual/CodingGuidelines/CodingGuidelines.html)
+* [iOS App Programming Guide](http://developer.apple.com/library/ios/#documentation/iphone/conceptual/iphoneosprogrammingguide/Introduction/Introduction.html)
+
 
 Table of Contents
 -----------------
@@ -25,6 +32,16 @@ Table of Contents
 * [Implementation](#implementation)
 * [Subclassing, Categories and Extensions](#subclassing-categories-and-extensions)
 * [Dot Notation Syntax](#dot-notation-syntax)
+* [Spacing](#spacing)
+* [Conditionals](#conditionals)
+  * [Ternary Operator](#ternary-operator)
+* [Error handling](#error-handling)
+* [Init & Dealloc](#init-and-dealloc)
+* [CGRect Functions](#cgrect-functions)
+* [Private Properties](#private-properties)
+* [Image Naming](#image-naming)
+* [Singletons](#singletons)
+* [Imports](#imports)
 * [Project Organization](#project-organization)
 
 <a name="comments"></a>
@@ -419,6 +436,189 @@ view.backgroundColor = [UIColor orangeColor];
 [view setBackgroundColor:[UIColor orangeColor]];
 UIApplication.sharedApplication.delegate;
 ```
+## Spacing
+
+* Indent using 4 spaces. Never indent with tabs. Be sure to set this preference in Xcode.
+* Method braces and other braces (`if`/`else`/`switch`/`while` etc.) always open on the same line as the statement but close on a new line.
+
+**For example:**
+```objc
+if (user.isHappy) {
+    // Do something
+}
+else {
+    // Do something else
+}
+```
+* There should be exactly one blank line between methods to aid in visual clarity and organization.
+* Whitespace within methods should be used to separate functionality (though often this can indicate an opportunity to split the method into several, smaller methods). In methods with long or verbose names, a single line of whitespace may be used to provide visual separation before the method’s body.
+* `@synthesize` and `@dynamic` should each be declared on new lines in the implementation.
+
+## Conditionals
+
+Conditional bodies should always use braces even when a conditional body could be written without braces (e.g., it is one line only) to prevent [errors](https://github.com/NYTimes/objective-c-style-guide/issues/26#issuecomment-22074256). These errors include adding a second line and expecting it to be part of the if-statement. Another, [even more dangerous defect](http://programmers.stackexchange.com/a/16530) may happen where the line “inside” the if-statement is commented out, and the next line unwittingly becomes part of the if-statement. In addition, this style is more consistent with all other conditionals, and therefore more easily scannable.
+
+**For example:**
+```objc
+if (!error) {
+    return success;
+}
+```
+
+**Not:**
+```objc
+if (!error)
+    return success;
+```
+
+or
+
+```objc
+if (!error) return success;
+```
+
+### Ternary Operator
+
+The ternary operator, `?` , should only be used when it increases clarity or code neatness. A single condition is usually all that should be evaluated. Evaluating multiple conditions is usually more understandable as an if statement, or refactored into named variables.
+
+**For example:**
+```objc
+result = a > b ? x : y;
+```
+
+**Not:**
+```objc
+result = a > b ? x = c > d ? c : d : y;
+```
+
+## Error Handling
+
+When methods return an error parameter by reference, switch on the returned value, not the error variable.
+
+**For example:**
+```objc
+NSError *error;
+if (![self trySomethingWithError:&error]) {
+    // Handle Error
+}
+```
+
+**Not:**
+```objc
+NSError *error;
+[self trySomethingWithError:&error];
+if (error) {
+    // Handle Error
+}
+```
+
+Some of Apple’s APIs write garbage values to the error parameter (if non-NULL) in successful cases, so switching on the error can cause false negatives (and subsequently crash).
+
+## init and dealloc
+
+`dealloc` methods should be placed at the top of the implementation, directly after the `@synthesize` and `@dynamic` statements. `init` should be placed directly below the `dealloc` methods of any class.
+
+`init` methods should be structured like this:
+
+```objc
+- (instancetype)init {
+    self = [super init]; // or call the designated initializer
+    if (self) {
+        // Custom initialization
+    }
+
+    return self;
+}
+```
+## `CGRect` Functions
+
+When accessing the `x`, `y`, `width`, or `height` of a `CGRect`, always use the [`CGGeometry` functions](http://developer.apple.com/library/ios/#documentation/graphicsimaging/reference/CGGeometry/Reference/reference.html) instead of direct struct member access. From Apple's `CGGeometry` reference:
+
+> All functions described in this reference that take CGRect data structures as inputs implicitly standardize those rectangles before calculating their results. For this reason, your applications should avoid directly reading and writing the data stored in the CGRect data structure. Instead, use the functions described here to manipulate rectangles and to retrieve their characteristics.
+
+**For example:**
+
+```objc
+CGRect frame = self.view.frame;
+
+CGFloat x = CGRectGetMinX(frame);
+CGFloat y = CGRectGetMinY(frame);
+CGFloat width = CGRectGetWidth(frame);
+CGFloat height = CGRectGetHeight(frame);
+```
+
+**Not:**
+
+```objc
+CGRect frame = self.view.frame;
+
+CGFloat x = frame.origin.x;
+CGFloat y = frame.origin.y;
+CGFloat width = frame.size.width;
+CGFloat height = frame.size.height;
+```
+## Private Properties
+
+Private properties should be declared in class extensions (anonymous categories) in the implementation file of a class.
+
+**For example:**
+
+```objc
+@interface NYTAdvertisement ()
+
+@property (nonatomic, strong) GADBannerView *googleAdView;
+@property (nonatomic, strong) ADBannerView *iAdView;
+@property (nonatomic, strong) UIWebView *adXWebView;
+
+@end
+```
+
+## Image Naming
+
+Image names should be named consistently to preserve organization and developer sanity. They should be named as one camel case string with a description of their purpose, followed by the un-prefixed name of the class or property they are customizing (if there is one), followed by a further description of color and/or placement, and finally their state.
+
+**For example:**
+
+* `RefreshBarButtonItem` / `RefreshBarButtonItem@2x` and `RefreshBarButtonItemSelected` / `RefreshBarButtonItemSelected@2x`
+* `ArticleNavigationBarWhite` / `ArticleNavigationBarWhite@2x` and `ArticleNavigationBarBlackSelected` / `ArticleNavigationBarBlackSelected@2x`.
+
+Images that are used for a similar purpose should be grouped in respective groups in an Images folder or Asset Catalog.
+
+## Singletons
+
+Singleton objects should use a thread-safe pattern for creating their shared instance.
+```objc
++ (instancetype)sharedInstance {
+   static id sharedInstance = nil;
+
+   static dispatch_once_t onceToken;
+   dispatch_once(&onceToken, ^{
+      sharedInstance = [[[self class] alloc] init];
+   });
+
+   return sharedInstance;
+}
+```
+This will prevent [possible and sometimes frequent crashes](http://cocoasamurai.blogspot.com/2011/04/singletons-your-doing-them-wrong.html).
+
+## Imports
+
+If there is more than one import statement, group the statements [together](http://ashfurrow.com/blog/structuring-modern-objective-c). Commenting each group is optional.
+
+Note: For modules use the [@import](http://clang.llvm.org/docs/Modules.html#using-modules) syntax.
+
+```objc
+// Frameworks
+@import QuartzCore;
+
+// Models
+#import "NYTUser.h"
+
+// Views
+#import "NYTButton.h"
+#import "NYTUserView.h"
+```
+
 
 <a name="project-organization"></a>
 Project Organization
