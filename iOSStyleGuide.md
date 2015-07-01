@@ -1,6 +1,5 @@
 Complete iOS Developer Style Guide
 ==================================
-*This guide has its own website: [http://iosstyle.us](http://iosstyle.us)*
 
 There are many Objective-C / CocoaTouch / iOS style guides out there but none of them touch on everything. This is an attempt to be a complete style guide that will cover all aspects of iOS/Objective-C development.
 
